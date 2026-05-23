@@ -19,6 +19,8 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
   .meta { color: #888; font-size: 11px; margin-bottom: 24px; }
+  .meta a { color: #B8A9E8; text-decoration: none; font-weight: 500; }
+  .meta a:hover { text-decoration: underline; }
   section { background: #1a1a1a; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; }
   h2 { font-size: 13px; font-weight: 500; margin: 0 0 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -36,11 +38,39 @@
   code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #aaa; }
   a { color: #B8A9E8; text-decoration: none; }
   a:hover { text-decoration: underline; }
+  .embed-bar {
+    background: #0d0d0d; border-radius: 4px; height: 8px; overflow: hidden;
+    margin: 8px 0 6px; border: 1px solid #2a2a2a;
+  }
+  .embed-fill {
+    height: 100%; background: linear-gradient(90deg, #7DD4A3 0%, #B8A9E8 100%);
+    transition: width 0.3s;
+  }
+  .embed-stats { display: flex; gap: 18px; font-size: 12px; color: #aaa; flex-wrap: wrap; }
+  .embed-stats b { color: #e8e8e8; font-weight: 500; }
 </style>
 </head>
 <body>
 <h1>UL OS Status</h1>
-<p class="meta">Generated <%= status.generated_at %> · auto-refresh 60s · <a href="/api/status.json">JSON</a></p>
+<p class="meta">Generated <%= status.generated_at %> · auto-refresh 60s · <a href="/search">🔍 Search</a> · <a href="/api/status.json">JSON</a></p>
+
+<% if (status.embeddings && !status.embeddings.error) { %>
+<section>
+  <h2>Embeddings coverage · pgvector + Voyage AI</h2>
+  <div class="embed-bar">
+    <div class="embed-fill" style="width: <%= status.embeddings.coveragePct %>%"></div>
+  </div>
+  <div class="embed-stats">
+    <span><b><%= status.embeddings.coveragePct %>%</b> coverage</span>
+    <span><b><%= Number(status.embeddings.embedded).toLocaleString('pl-PL') %></b> embedded</span>
+    <span><b><%= Number(status.embeddings.pending).toLocaleString('pl-PL') %></b> pending</span>
+    <span><b><%= Number(status.embeddings.total).toLocaleString('pl-PL') %></b> total</span>
+    <% if (status.embeddings.lastEmbeddedAt) { %>
+      <span>last: <%= new Date(status.embeddings.lastEmbeddedAt).toLocaleString('pl-PL') %></span>
+    <% } %>
+  </div>
+</section>
+<% } %>
 
 <section>
   <h2>Coolify Apps</h2>

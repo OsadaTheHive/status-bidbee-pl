@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UL OS Search</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0; padding: 20px;
+    background: #0d0d0d; color: #e8e8e8;
+    font-size: 13px; line-height: 1.5;
+  }
+  h1 {
+    font-size: 18px; font-weight: 500; margin: 0 0 4px;
+    background: linear-gradient(135deg, #B8A9E8 0%, #7DD4A3 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .meta { color: #888; font-size: 11px; margin-bottom: 16px; }
+  .meta a { color: #B8A9E8; text-decoration: none; }
+  .meta a:hover { text-decoration: underline; }
+  form {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    background: #1a1a1a; padding: 14px; border-radius: 8px;
+  }
+  form input[type="text"], form input[type="search"], form select {
+    background: #0d0d0d; color: #e8e8e8; border: 1px solid #2a2a2a;
+    padding: 8px 12px; border-radius: 4px; font-size: 13px;
+    font-family: inherit;
+  }
+  form input[type="search"] { flex: 1; min-width: 220px; }
+  form input:focus, form select:focus { outline: none; border-color: #B8A9E8; }
+  form button {
+    background: #B8A9E8; color: #0d0d0d; border: none;
+    padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+  }
+  form button:hover { background: #C5B9EF; }
+  .stats { color: #888; font-size: 11px; margin: 0 0 10px; }
+  .stats b { color: #c0c0c0; font-weight: 500; }
+  .result {
+    background: #1a1a1a; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: start;
+  }
+  .sim {
+    background: rgba(125, 212, 163, 0.15); color: #7DD4A3;
+    border-radius: 4px; padding: 6px 0; text-align: center;
+    font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500;
+    height: fit-content;
+  }
+  .sim.weak { background: rgba(242, 208, 107, 0.12); color: #F2D06B; }
+  .sim.veryweak { background: rgba(244, 167, 108, 0.10); color: #F4A76C; }
+  .r-title { font-size: 14px; font-weight: 500; color: #e8e8e8; margin: 0 0 4px; line-height: 1.35; }
+  .r-summary { font-size: 12px; color: #aaa; margin: 0 0 6px; line-height: 1.5; }
+  .r-meta { font-size: 11px; color: #777; display: flex; gap: 12px; flex-wrap: wrap; }
+  .r-meta span { white-space: nowrap; }
+  .badge {
+    display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 3px;
+    background: #2a2a2a; color: #aaa;
+  }
+  .badge.brand { background: rgba(184, 169, 232, 0.15); color: #B8A9E8; }
+  .badge.type { background: rgba(126, 188, 230, 0.12); color: #7EBCE6; }
+  .empty {
+    background: #1a1a1a; border-radius: 8px; padding: 24px; text-align: center;
+    color: #888; font-size: 13px;
+  }
+  .err {
+    background: rgba(244, 76, 76, 0.10); color: #F46060;
+    padding: 12px 16px; border-radius: 6px; font-size: 12px; line-height: 1.5;
+  }
+  code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>UL OS Search</h1>
+<p class="meta">Semantic search via pgvector + Voyage embeddings · <a href="/">← Dashboard</a></p>
+
+<form method="GET" action="/search">
+  <input type="search" name="q" placeholder="np. kontrakty z HRG · WFOŚiGW Mende · transport TPO Hamburg" value="<%= query || '' %>" autofocus>
+  <select name="brand">
+    <option value="">Wszystkie marki</option>
+    <option value="BIDBEE" <%= brand === 'BIDBEE' ? 'selected' : '' %>>BIDBEE</option>
+    <option value="BEEco" <%= brand === 'BEEco' ? 'selected' : '' %>>BEEco</option>
+    <option value="BEEzzy" <%= brand === 'BEEzzy' ? 'selected' : '' %>>BEEzzy</option>
+    <option value="BEEZhub" <%= brand === 'BEEZhub' ? 'selected' : '' %>>BEEZhub</option>
+    <option value="HiveLive" <%= brand === 'HiveLive' ? 'selected' : '' %>>HiveLive</option>
+  </select>
+  <select name="type">
+    <option value="">Wszystkie typy</option>
+    <option value="faktura" <%= type === 'faktura' ? 'selected' : '' %>>faktura</option>
+    <option value="umowa" <%= type === 'umowa' ? 'selected' : '' %>>umowa</option>
+    <option value="mail_beneficjent" <%= type === 'mail_beneficjent' ? 'selected' : '' %>>mail beneficjent</option>
+    <option value="dokumentacja_techniczna" <%= type === 'dokumentacja_techniczna' ? 'selected' : '' %>>dok. techniczna</option>
+    <option value="raport" <%= type === 'raport' ? 'selected' : '' %>>raport</option>
+    <option value="inne" <%= type === 'inne' ? 'selected' : '' %>>inne</option>
+  </select>
+  <button type="submit">Szukaj</button>
+</form>
+
+<% if (error) { %>
+  <div class="err"><%= error %></div>
+<% } else if (results === null) { %>
+  <div class="empty">Wpisz zapytanie powyżej. Search szuka semantycznie po treści 67k+ dokumentów — nie tylko po słowach kluczowych.</div>
+<% } else if (results.length === 0) { %>
+  <div class="empty">Brak wyników dla tego zapytania.</div>
+<% } else { %>
+  <p class="stats"><b><%= results.length %></b> wyników · <%= tokensUsed %> tok · <%= model %></p>
+  <% results.forEach(r => {
+    const simNum = Number(r.similarity);
+    const simClass = simNum >= 0.85 ? '' : (simNum >= 0.75 ? 'weak' : 'veryweak');
+  %>
+    <div class="result">
+      <div class="sim <%= simClass %>"><%= r.similarity %></div>
+      <div>
+        <p class="r-title"><%= r.title %></p>
+        <% if (r.summary) { %><p class="r-summary"><%= r.summary %></p><% } %>
+        <div class="r-meta">
+          <% if (r.brand) { %><span class="badge brand"><%= r.brand %></span><% } %>
+          <% if (r.type) { %><span class="badge type"><%= r.type %></span><% } %>
+          <% if (r.project) { %><span>📁 <%= r.project %></span><% } %>
+          <% if (r.kontrahent) { %><span>🤝 <%= r.kontrahent %></span><% } %>
+          <% if (r.document_date) { %><span>📅 <%= r.document_date %></span><% } %>
+          <% if (r.vault_path) { %><span><code><%= r.vault_path.split('/').pop() %></code></span><% } %>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+<% } %>
+</body>
+</html>
